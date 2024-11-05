@@ -7,7 +7,7 @@
     <style>
         @font-face {
             font-family: 'Museo Sans Cyrl';
-            src: url('MuseoSansCyrl_0.otf'); /* Замените path_to_font на фактический путь к файлу шрифта */
+            src: url('MuseoSansCyrl_0.otf');
         }
 
         body {
@@ -18,20 +18,20 @@
             flex-direction: column;
             align-items: center;
             background-image: url('img/bg.jpg');
-            background-size: cover; /* Изображение покроет весь экран */
-            background-position: center; /* Центрирование изображения */
-            background-repeat: no-repeat; /* Изображение не будет повторяться */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .controls {
             position: absolute;
             top: 30px;
-            background: rgba(255, 255, 255, 0.8); /* Полупрозрачный фон */
+            background: rgba(255, 255, 255, 0.8);
             padding: 20px;
             border-radius: 5px;
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 2; /* Поверх изображения */
+            z-index: 2;
         }
 
         .background-container {
@@ -41,7 +41,16 @@
             background-image: url('img/iiko-bg-img.jpg');
             background-size: cover;
             margin-top: 20px;
-            margin-bottom: 10px; /* Нижний отступ */
+            margin-bottom: 10px;
+        }
+
+        .office-background-container {
+            position: absolute;
+            width: 800px;
+            height: 760px;
+            background-image: url('img/iiko_office_bg.jpg');
+            background-size: cover;
+            top: -9999px; /* Скрываем фон по умолчанию */
         }
 
         .overlay-image {
@@ -51,6 +60,7 @@
             width: 150px;
             height: 150px;
         }
+
         .overlay-qr-bg-image {
             position: absolute;
             top: 445px;
@@ -76,7 +86,6 @@
     </style>
 </head>
 <body>
-    <!-- Форма заполнения -->
     <div class="controls">
          <label>
             Введите номер CRM:
@@ -84,22 +93,27 @@
         </label>
         <br><br>
         <button onclick="updateContent()">Применить</button>
-        <button onclick="saveAsImage()">Скачать изображение фона</button>
+        <button onclick="saveAsImage()">Скачать фон для iikoFront</button>
+        <button onclick="saveWithNewBackground()">Скачать фон для iiko office</button>
     </div>
 
-    <!-- Блок с фоновым изображением и элементами -->
     <div class="background-container" id="backgroundContainer">
         <img src="img/qr_bg.png" alt="overlayImageQrBg" class="overlay-qr-bg-image" id="overlayImageQrBg">
         <canvas id="qrCanvas" class="overlay-image"></canvas>
         <div class="overlay-text" id="overlayText"></div>
     </div>
 
-    <!-- Футер -->
+    <!-- Блок с новым фоном -->
+    <div class="office-background-container" id="officeBackgroundContainer">
+        <img src="img/qr_bg.png" alt="overlayImageQrBgOffice" class="overlay-qr-bg-image">
+        <canvas id="qrCanvasOffice" class="overlay-image"></canvas>
+        <div class="overlay-text" id="overlayTextOffice"></div>
+    </div>
+
     <footer>
         Генератор Background изображений iiko от Мирамгазы
     </footer>
 
-    <!-- Подключение библиотеки qrious и html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.1/qrious.min.js"></script>
 
@@ -108,21 +122,37 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
+
         function updateContent() {
             const textInput = document.getElementById('textInput').value;
             const overlayText = document.getElementById('overlayText');
+            const overlayTextOffice = document.getElementById('overlayTextOffice');
 
-            // Генерация QR-кода с добавлением текста
             const qrCanvas = document.getElementById('qrCanvas');
-            const qr = new QRious({
+            const qrCanvasOffice = document.getElementById('qrCanvasOffice');
+
+            const qrData = `https://wa.me/77710687003?text=${encodeURIComponent(textInput)}`;
+
+            // Генерация QR-кода для основного фона
+            new QRious({
                 element: qrCanvas,
-                value: `https://wa.me/77710687003?text=${encodeURIComponent(textInput)}`, /* <-Номер WhatsApp можно изменить здесь */
-                size: 150, // размер QR-кода
-                background: 'transparent', // фон прозрачный
-                foreground: 'white' // цвет QR-кода белый
+                value: qrData,
+                size: 150,
+                background: 'transparent',
+                foreground: 'white'
+            });
+
+            // Генерация QR-кода для фона iiko office
+            new QRious({
+                element: qrCanvasOffice,
+                value: qrData,
+                size: 150,
+                background: 'transparent',
+                foreground: 'white'
             });
 
             overlayText.textContent = textInput;
+            overlayTextOffice.textContent = textInput;
         }
 
         function saveAsImage() {
@@ -137,8 +167,21 @@
             });
         }
 
-         // Инициализация при загрузке страницы
-         window.onload = function() {
+        function saveWithNewBackground() {
+            const container = document.getElementById('officeBackgroundContainer');
+            const fileName = (document.getElementById('textInput').value || 'background_image') + '-io';
+
+            container.style.top = '0'; // Показать новый фон перед захватом
+            html2canvas(container).then(canvas => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+                link.download = `${fileName}.jpg`;
+                link.click();
+                container.style.top = '-9999px'; // Вернуть скрытие после сохранения
+            });
+        }
+
+        window.onload = function() {
             const textParam = getUrlParameter('text');
             if (textParam) {
                 document.getElementById('textInput').value = decodeURIComponent(textParam);
